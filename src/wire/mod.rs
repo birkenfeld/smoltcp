@@ -217,4 +217,5 @@ pub use self::tcp::{SeqNumber as TcpSeqNumber,
 
 #[cfg(feature = "proto-ipv4")]
 pub use self::dhcpv4::{Packet as DhcpPacket,
-                       Repr as DhcpRepr};
+                       Repr as DhcpRepr,
+                       MessageType as DhcpMessageType};
