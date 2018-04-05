@@ -50,6 +50,7 @@ pub enum DhcpOption<'a> {
     RequestedIp(Ipv4Address),
     ClientIdentifier(EthernetAddress),
     ServerIdentifier(Ipv4Address),
+    SubnetMask(Ipv4Address),
     Other { kind: u8, data: &'a [u8] }
 }
 
@@ -91,6 +92,9 @@ impl<'a> DhcpOption<'a> {
                     (field::OPT_SERVER_IDENTIFIER, 4) => {
                         option = DhcpOption::ServerIdentifier(Ipv4Address::from_bytes(data));
                     }
+                    (field::OPT_SUBNET_MASK, 4) => {
+                        option = DhcpOption::SubnetMask(Ipv4Address::from_bytes(data));
+                    }
                     (_, _) => {
                         option = DhcpOption::Other { kind: kind, data: data };
                     }
@@ -108,7 +112,9 @@ impl<'a> DhcpOption<'a> {
             &DhcpOption::ClientIdentifier(eth_addr) => {
                 3 + eth_addr.as_bytes().len()
             }
-            &DhcpOption::RequestedIp(ip) | &DhcpOption::ServerIdentifier(ip) => {
+            &DhcpOption::RequestedIp(ip) |
+            &DhcpOption::ServerIdentifier(ip) |
+            &DhcpOption::SubnetMask(ip) => {
                 2 + ip.as_bytes().len()
             },
             &DhcpOption::Other { data, .. } => 2 + data.len()
@@ -147,6 +153,10 @@ impl<'a> DhcpOption<'a> {
                     &DhcpOption::ServerIdentifier(ip)  => {
                         buffer[0] = field::OPT_SERVER_IDENTIFIER;
                         buffer[2..6].copy_from_slice(ip.as_bytes());
+                    }
+                    &DhcpOption::SubnetMask(mask)  => {
+                        buffer[0] = field::OPT_SUBNET_MASK;
+                        buffer[2..6].copy_from_slice(mask.as_bytes());
                     }
                     &DhcpOption::Other { kind, data: provided } => {
                         buffer[0] = kind;
@@ -603,6 +613,8 @@ pub struct Repr<'a> {
     /// This field is also known as `siaddr` in the RFC. It may be set by the server in DHCPOFFER
     /// and DHCPACK messages, and represent the address of the next server to use in bootstrap.
     pub server_ip: Ipv4Address,
+    /// This field comes from a corresponding DhcpOption.
+    pub subnet_mask: Option<Ipv4Address>,
     /// This field is also known as `giaddr` in the RFC. In order to allow DHCP clients on subnets
     /// not directly served by DHCP servers to communicate with DHCP servers, DHCP relay agents can
     /// be installed on these subnets. The DHCP client broadcasts on the local link; the relay
@@ -680,6 +692,7 @@ impl<'a> Repr<'a> {
         let mut requested_ip = None;
         let mut client_identifier = None;
         let mut server_identifier = None;
+        let mut subnet_mask = None;
         let mut parameter_request_list = None;
 
         let mut options = packet.options()?;
@@ -702,6 +715,9 @@ impl<'a> Repr<'a> {
                 DhcpOption::ServerIdentifier(ip) => {
                     server_identifier = Some(ip);
                 }
+                DhcpOption::SubnetMask(mask) => {
+                    subnet_mask = Some(mask);
+                }
                 DhcpOption::Other {kind: field::OPT_PARAMETER_REQUEST_LIST, data} => {
                     parameter_request_list = Some(data);
                 }
@@ -714,7 +730,7 @@ impl<'a> Repr<'a> {
 
         Ok(Repr {
             transaction_id, client_hardware_address, client_ip, your_ip, server_ip, relay_agent_ip,
-            broadcast, requested_ip, server_identifier, client_identifier, parameter_request_list,
+            broadcast, requested_ip, server_identifier, subnet_mask, client_identifier, parameter_request_list,
             message_type: message_type?,
         })
     }
@@ -878,6 +894,7 @@ mod test {
             client_ip: IP_NULL,
             your_ip: IP_NULL,
             server_ip: IP_NULL,
+            subnet_mask: None,
             relay_agent_ip: IP_NULL,
             broadcast: false,
             requested_ip: Some(IP_NULL),
