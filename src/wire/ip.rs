@@ -184,6 +184,19 @@ impl Address {
             &Address::__Nonexhaustive => unreachable!()
         }
     }
+
+    /// Treat as subnet mask, get position of first 0
+    pub fn to_prefix_len(&self) -> u8 {
+        let mut prefix_len = 0;
+        for byte in self.as_bytes() {
+            let mut b = *byte;
+            while b & 0x80 != 0 {
+                prefix_len += 1;
+                b <<= 1;
+            }
+        }
+        prefix_len
+    }
 }
 
 #[cfg(all(feature = "std", feature = "proto-ipv4", feature = "proto-ipv6"))]
@@ -1073,5 +1086,64 @@ pub(crate) mod test {
     #[test]
     fn endpoint_unspecified() {
         assert!(!Endpoint::UNSPECIFIED.is_specified());
+    }
+
+    #[test]
+    #[cfg(feature = "proto-ipv4")]
+    fn to_prefix_len_ipv4() {
+        fn test_eq<A: Into<Address>>(prefix_len: u8, mask: A) {
+            assert_eq!(
+                prefix_len,
+                mask.into().to_prefix_len()
+            );
+        }
+
+        test_eq(0, Ipv4Address::new(0, 0, 0, 0));
+        test_eq(1, Ipv4Address::new(128, 0, 0, 0));
+        test_eq(2, Ipv4Address::new(192, 0, 0, 0));
+        test_eq(3, Ipv4Address::new(224, 0, 0, 0));
+        test_eq(4, Ipv4Address::new(240, 0, 0, 0));
+        test_eq(5, Ipv4Address::new(248, 0, 0, 0));
+        test_eq(6, Ipv4Address::new(252, 0, 0, 0));
+        test_eq(7, Ipv4Address::new(254, 0, 0, 0));
+        test_eq(8, Ipv4Address::new(255, 0, 0, 0));
+        test_eq(9, Ipv4Address::new(255, 128, 0, 0));
+        test_eq(10, Ipv4Address::new(255, 192, 0, 0));
+        test_eq(11, Ipv4Address::new(255, 224, 0, 0));
+        test_eq(12, Ipv4Address::new(255, 240, 0, 0));
+        test_eq(13, Ipv4Address::new(255, 248, 0, 0));
+        test_eq(14, Ipv4Address::new(255, 252, 0, 0));
+        test_eq(15, Ipv4Address::new(255, 254, 0, 0));
+        test_eq(16, Ipv4Address::new(255, 255, 0, 0));
+        test_eq(17, Ipv4Address::new(255, 255, 128, 0));
+        test_eq(18, Ipv4Address::new(255, 255, 192, 0));
+        test_eq(19, Ipv4Address::new(255, 255, 224, 0));
+        test_eq(20, Ipv4Address::new(255, 255, 240, 0));
+        test_eq(21, Ipv4Address::new(255, 255, 248, 0));
+        test_eq(22, Ipv4Address::new(255, 255, 252, 0));
+        test_eq(23, Ipv4Address::new(255, 255, 254, 0));
+        test_eq(24, Ipv4Address::new(255, 255, 255, 0));
+        test_eq(25, Ipv4Address::new(255, 255, 255, 128));
+        test_eq(26, Ipv4Address::new(255, 255, 255, 192));
+        test_eq(27, Ipv4Address::new(255, 255, 255, 224));
+        test_eq(28, Ipv4Address::new(255, 255, 255, 240));
+        test_eq(29, Ipv4Address::new(255, 255, 255, 248));
+        test_eq(30, Ipv4Address::new(255, 255, 255, 252));
+        test_eq(31, Ipv4Address::new(255, 255, 255, 254));
+        test_eq(32, Ipv4Address::new(255, 255, 255, 255));
+    }
+
+    #[test]
+    #[cfg(feature = "proto-ipv6")]
+    fn to_prefix_len_ipv6() {
+        fn test_eq<A: Into<Address>>(prefix_len: u8, mask: A) {
+            assert_eq!(
+                prefix_len,
+                mask.into().to_prefix_len()
+            );
+        }
+
+        test_eq(0, Ipv6Address::new(0, 0, 0, 0, 0, 0, 0, 0));
+        test_eq(128, Ipv6Address::new(0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff));
     }
 }
