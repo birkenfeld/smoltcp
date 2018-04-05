@@ -189,10 +189,14 @@ impl Address {
     pub fn to_prefix_len(&self) -> u8 {
         let mut prefix_len = 0;
         for byte in self.as_bytes() {
-            let mut b = *byte;
-            while b & 0x80 != 0 {
+            let mut mask = 0x80;
+            for _ in 0..8 {
+                if *byte & mask == 0 {
+                    return prefix_len
+                }
+
                 prefix_len += 1;
-                b <<= 1;
+                mask >>= 1;
             }
         }
         prefix_len
