@@ -267,6 +267,15 @@ impl<'b, 'c, 'e, DeviceT> Interface<'b, 'c, 'e, DeviceT>
         self.inner.ip_addrs.as_ref()
     }
 
+    /// Get the first IPv4 address if present.
+    pub fn ipv4_addr(&self) -> Option<Ipv4Address> {
+        self.ip_addrs().iter()
+            .filter_map(|cidr| match cidr.address() {
+                IpAddress::Ipv4(addr) => Some(addr),
+                _ => None,
+            }).next()
+    }
+
     /// Update the IP addresses of the interface.
     ///
     /// # Panics
