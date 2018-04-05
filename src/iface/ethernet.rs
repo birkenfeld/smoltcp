@@ -276,6 +276,10 @@ impl<'b, 'c, 'e, DeviceT> Interface<'b, 'c, 'e, DeviceT>
             }).next()
     }
 
+    pub fn in_same_network(&self, addr: &IpAddress) -> bool {
+        self.inner.in_same_network(addr)
+    }
+
     /// Update the IP addresses of the interface.
     ///
     /// # Panics
