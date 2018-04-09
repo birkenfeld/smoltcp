@@ -658,6 +658,8 @@ pub struct Repr<'a> {
     /// The parameter request list informs the server about which configuration parameters
     /// the client is interested in.
     pub parameter_request_list: Option<&'a [u8]>,
+    /// DNS servers
+    pub dns_servers: Option<[Option<Ipv4Address>; 3]>,
 }
 
 impl<'a> Repr<'a> {
@@ -706,6 +708,7 @@ impl<'a> Repr<'a> {
         let mut router = None;
         let mut subnet_mask = None;
         let mut parameter_request_list = None;
+        let mut dns_servers = None;
 
         let mut options = packet.options()?;
         while options.len() > 0 {
@@ -736,6 +739,16 @@ impl<'a> Repr<'a> {
                 DhcpOption::Other {kind: field::OPT_PARAMETER_REQUEST_LIST, data} => {
                     parameter_request_list = Some(data);
                 }
+                DhcpOption::Other {kind: field::OPT_DOMAIN_NAME_SERVER, data} => {
+                    let mut dns_servers_inner = [None; 3];
+                    for i in 0.. {
+                        let offset = 4 * i;
+                        let end = offset + 4;
+                        if end > data.len() { break }
+                        dns_servers_inner[i] = Some(Ipv4Address::from_bytes(&data[offset..end]));
+                    }
+                    dns_servers = Some(dns_servers_inner);
+                }
                 DhcpOption::Other {..} => {}
             }
             options = next_options;
@@ -746,7 +759,7 @@ impl<'a> Repr<'a> {
         Ok(Repr {
             transaction_id, client_hardware_address, client_ip, your_ip, server_ip, relay_agent_ip,
             broadcast, requested_ip, server_identifier, router,
-            subnet_mask, client_identifier, parameter_request_list,
+            subnet_mask, client_identifier, parameter_request_list, dns_servers,
             message_type: message_type?,
         })
     }
@@ -924,6 +937,7 @@ mod test {
             client_identifier: Some(CLIENT_MAC),
             server_identifier: None,
             parameter_request_list: Some(&[1, 3, 6, 42]),
+            dns_servers: None,
         }
     }
 
