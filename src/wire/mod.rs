@@ -110,7 +110,7 @@ mod mld;
 mod udp;
 mod tcp;
 #[cfg(feature = "proto-dhcpv4")]
-mod dhcpv4;
+pub(crate) mod dhcpv4;
 
 pub use self::pretty_print::PrettyPrinter;
 

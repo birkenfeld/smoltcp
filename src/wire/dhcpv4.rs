@@ -184,7 +184,7 @@ pub struct Packet<T: AsRef<[u8]>> {
     buffer: T
 }
 
-mod field {
+pub(crate) mod field {
     #![allow(non_snake_case)]
     #![allow(unused)]
 
