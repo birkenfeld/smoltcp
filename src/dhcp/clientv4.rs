@@ -150,7 +150,7 @@ impl Client {
                // Set gateway
                match dhcp_repr.router {
                    Some(router) if iface.in_same_network(&router.into()) => {
-                       iface.set_ipv4_gateway(router);
+                       let _ = iface.routes_mut().add_default_ipv4_route(router);
                    }
                    _ => ()
                }

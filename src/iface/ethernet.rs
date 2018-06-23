@@ -14,7 +14,7 @@ use wire::{IpAddress, IpProtocol, IpRepr, IpCidr};
 #[cfg(feature = "proto-ipv6")]
 use wire::{Ipv6Address, Ipv6Packet, Ipv6Repr, IPV6_MIN_MTU};
 #[cfg(feature = "proto-ipv4")]
-use wire::{Ipv4Packet, Ipv4Repr, IPV4_MIN_MTU};
+use wire::{Ipv4Address, Ipv4Packet, Ipv4Repr, IPV4_MIN_MTU};
 #[cfg(feature = "proto-ipv4")]
 use wire::{ArpPacket, ArpRepr, ArpOperation};
 #[cfg(feature = "proto-ipv4")]
@@ -516,13 +516,6 @@ impl<'b, 'c, 'e> InterfaceInner<'b, 'c, 'e> {
                 _ => false,
             }
         }).is_some()
-    }
-
-    #[cfg(feature = "proto-ipv4")]
-    fn check_gateway_addr(addr: &Ipv4Address) {
-        if !addr.is_unspecified() && !addr.is_unicast() {
-            panic!("gateway IP address {} is not unicast", addr);
-        }
     }
 
     /// Check whether the interface has the given IP address assigned.
@@ -1200,6 +1193,11 @@ impl<'b, 'c, 'e> InterfaceInner<'b, 'c, 'e> {
         // Send directly.
         if self.in_same_network(addr) || addr.is_broadcast() {
             return Ok(addr.clone())
+        }
+
+        // Non-broadcast, non-unicast -> no route possible
+        if !addr.is_unicast() {
+            return Err(Error::Unaddressable);
         }
 
         // Route via a router.
