@@ -10,7 +10,7 @@ use iface::EthernetInterface as Interface;
 use time::{Instant, Duration};
 use super::{UDP_SERVER_PORT, UDP_CLIENT_PORT};
 
-const DISCOVER_TIMEOUT: u64 = 10;
+const DISCOVER_TIMEOUT: u64 = 20;
 const REQUEST_TIMEOUT: u64 = 1;
 const REQUEST_RETRIES: u16 = 15;
 const RENEW_INTERVAL: u64 = 60;
